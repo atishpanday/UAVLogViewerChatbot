@@ -14,7 +14,8 @@
                     <div v-else v-html="renderMarkdown(message.content)"></div>
                 </div>
                 <div v-if="loading" class="message assistant thinking">
-                    Thinking...
+                    <span v-if="!analyzing">Thinking...</span>
+                    <span v-else>Analyzing flight logs...</span>
                 </div>
             </div>
             <div class="chatbot-input">
@@ -36,7 +37,8 @@ export default {
             messages: [],
             newMessage: '',
             isOpen: false,
-            loading: false
+            loading: false,
+            analyzing: false
         }
     },
     methods: {
@@ -49,6 +51,11 @@ export default {
                 })
                 this.newMessage = ''
                 this.loading = true
+
+                // Set analyzing to true after 5 seconds
+                setTimeout(() => {
+                    this.analyzing = true
+                }, 3000)
 
                 try {
                     const response = await fetch('http://localhost:8000/chatbot', {
@@ -72,6 +79,8 @@ export default {
                         if (done) break
                         const chunk = decoder.decode(value, { stream: true })
                         if (this.messages[this.messages.length - 1].role === 'user') {
+                            this.loading = false
+                            this.analyzing = false
                             this.messages.push({
                                 role: 'assistant',
                                 content: chunk
@@ -81,13 +90,14 @@ export default {
                         }
                     }
                 } catch (error) {
+                    this.loading = false
+                    this.analyzing = false
                     console.error('Error:', error)
                     this.messages.push({
                         role: 'assistant',
                         content: 'Sorry, there was an error processing your message.'
                     })
                 } finally {
-                    this.loading = false
                     this.$nextTick(() => {
                         this.scrollToBottom()
                     })
