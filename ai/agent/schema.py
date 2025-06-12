@@ -1,0 +1,13 @@
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class QueryType(BaseModel):
+    query_type: Literal['general', 'flight', 'conversation']
+
+class LogMessageQuery(BaseModel):
+    messageType: str = Field(
+        description="The type of log message to be fetched to answer the user's question"
+    )
+    metrics: list[str] = Field(
+        description="The specific metrics to be fetched to answer the user's question"
+    )

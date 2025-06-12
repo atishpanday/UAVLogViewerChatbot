@@ -225,6 +225,28 @@ export default {
             a.click()
             document.body.removeChild(a)
             window.URL.revokeObjectURL(url)
+        },
+        async postEventsToAI () {
+            const events = this.state.events.map((event) => {
+                const messageList = {}
+                for (const [key, value] of Object.entries(event.messageList)) {
+                    messageList[key] = Array.from(value)
+                }
+                return {
+                    messageType: event.messageType,
+                    messageList: messageList,
+                    dataType: {}
+                }
+            })
+            await fetch('http://localhost:8000/uavlogs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    logs: events
+                })
+            })
         }
     },
     mounted () {
@@ -238,7 +260,7 @@ export default {
                 })
             }
         })
-        worker.onmessage = (event) => {
+        worker.onmessage = async (event) => {
             if (event.data.percentage) {
                 this.state.processPercentage = event.data.percentage
             } else if (event.data.availableMessages) {
@@ -250,8 +272,10 @@ export default {
                 this.$eventHub.$emit('messages')
             } else if (event.data.messagesDoneLoading) {
                 this.$eventHub.$emit('messagesDoneLoading')
+                this.postEventsToAI()
             } else if (event.data.messageType) {
                 this.state.messages[event.data.messageType] = event.data.messageList
+                this.state.events.push(event.data)
                 this.$eventHub.$emit('messages')
             } else if (event.data.files) {
                 this.state.files = event.data.files

@@ -38,6 +38,7 @@
             </main>
 
         </div>
+        <Chatbot/>
     </div>
 </template>
 
@@ -51,6 +52,7 @@ import ParamViewer from '@/components/widgets/ParamViewer.vue'
 import MessageViewer from '@/components/widgets/MessageViewer.vue'
 import DeviceIDViewer from '@/components/widgets/DeviceIDViewer.vue'
 import AttitudeViewer from '@/components/widgets/AttitudeWidget.vue'
+import Chatbot from '@/components/Chatbot.vue'
 import { store } from '@/components/Globals.js'
 import { AtomSpinner } from 'epic-spinners'
 import { Color } from 'cesium'
@@ -239,7 +241,8 @@ export default {
         DeviceIDViewer,
         AttitudeViewer,
         MagFitTool,
-        EkfHelperTool
+        EkfHelperTool,
+        Chatbot
     },
     computed: {
         mapOk () {
