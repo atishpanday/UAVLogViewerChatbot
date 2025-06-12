@@ -6,6 +6,7 @@ from .schema import QueryType, LogMessageQuery
 from data.fetch_logs import fetch_logs
 from data.fetch_log_messages import fetch_log_messages
 import json
+from .prompts import query_analyser_prompt, general_response_prompt, flight_aware_data_fetcher_prompt, flight_aware_response_prompt
 
 
 class Agent:
@@ -26,7 +27,7 @@ class Agent:
     
     async def query_analyzer(self, messages: list[Message]):
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a query analyzer that finds the correct category of the query. Do not answer the query, simply return what type of query it is. For example, if the user asks general questions not specific to a particular flight, return 'general'. If the user asks about a specific flight, return 'flight'. If the user is simply greeting, or you are not sure what the user is asking, return 'conversation'."),
+            ("system", query_analyser_prompt),
             MessagesPlaceholder(variable_name="messages")
         ])
         chain = prompt | self.llm.with_structured_output(QueryType)
@@ -59,7 +60,7 @@ class Agent:
 
     async def general_response(self, messages: list[Message]):
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a telemetry expert that can answer knowledge based questions about different log messages of a flight. The question does not refer to any particular flight, but rather general question about telemetry. Answer the question using the context provided here: \n\n {reference}"),
+            ("system", general_response_prompt),
             MessagesPlaceholder(variable_name="messages")
         ])
         reference = self.fetch_reference(messages[-1].content)
@@ -73,7 +74,7 @@ class Agent:
         reference = self.fetch_reference(messages[-1].content)
         available_log_messages = json.dumps(await fetch_log_messages())
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a telemetry expert that can identify the type of log message and metric the user's query is referring to. You need to provide the messageType (the log message) and the list of specific metrics to answer the user's question. ONLY RESPOND WITH ONE OF THE AVAILABLE LOG MESSAGES. Use the context provided here: \n\nREFERENCE MANUAL: \n\n {reference} \n\n The available log messages for the current flight are provided here: \n\nAVAILABLE LOG MESSAGES: \n\n{available_log_messages}"),
+            ("system", flight_aware_data_fetcher_prompt),
             MessagesPlaceholder(variable_name="messages")
         ])
         chain = prompt | self.llm.with_structured_output(LogMessageQuery)
@@ -83,16 +84,19 @@ class Agent:
             "messages": messages
         })
 
-        message_type, metrics = log_message_query.message_type, log_message_query.metrics
+        message_types = log_message_query.message_types
 
-        print(message_type, metrics)
+        print(message_types)
 
-        logs = json.dumps(await fetch_logs(message_type, metrics))
+        logs = []
 
-        print(logs)
+        for message_type in message_types:
+            logs.append(await fetch_logs(message_type.message_type, message_type.metrics))
+
+        logs = json.dumps(logs)
 
         flight_analysis_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a telemetry expert that can analyze the logs of a flight and provide a summary of the logs, answering the user's query. DO NOT MENTION THE DATA THAT YOU USE TO ANSWER THE QUERY. SIMPLY ANSWER THE QUERY. The reference for the logs is provided here: \n\nREFERENCE MANUAL: \n\n{reference} \n\n The logs are provided here: \n\nLOGS: \n\n{logs}"),
+            ("system", flight_aware_response_prompt),
             MessagesPlaceholder(variable_name="messages")
         ])
         flight_analysis_chain = flight_analysis_prompt | self.llm
