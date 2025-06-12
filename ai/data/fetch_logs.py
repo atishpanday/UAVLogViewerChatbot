@@ -3,12 +3,12 @@ from common.statistics import calculate_statistics, detect_abrupt_changes
 
 async def fetch_logs(messageType: str, metrics: list[str]):
     try:
+        if "time_boot_ms" not in metrics:
+            metrics.append("time_boot_ms")
+
         projection = { "_id": 0 }
         for metric in metrics:
             projection[f"messageList.{metric}"] = 1
-
-        if "time_boot_ms" not in metrics:
-            projection["messageList.time_boot_ms"] = 1
 
         collection = get_collection()
         
@@ -26,9 +26,10 @@ async def fetch_logs(messageType: str, metrics: list[str]):
         for metric in metrics:
             values = result.get("messageList", {}).get(metric, [])
             if (
-                isinstance(values, list) and isinstance(timestamps, list)
+                isinstance(values, list)
                 and len(values) == len(timestamps) and len(values) > 2
-                and all(isinstance(v, (float)) for v in values)
+                and all(isinstance(v, (int, float)) 
+                or (isinstance(v, str) and v.replace('.', '', 1).isdigit()) for v in values)
             ):
                 stats_summary = calculate_statistics(values)
                 abrupt_changes = detect_abrupt_changes(values, timestamps, 10)
@@ -36,12 +37,8 @@ async def fetch_logs(messageType: str, metrics: list[str]):
             else:
                 stats_summary = calculate_statistics(values)
                 stats_summary["abrupt_changes"] = []
-            if len(values) > 500 and all(isinstance(x, (int, float)) for x in values):
-                # Remove the original values array if length > 500
-                result["messageList"][metric] = stats_summary
-            else:
-                # Keep original values and add stats as separate field
-                result["messageList"][f"{metric}_stats"] = stats_summary
+            
+            result["messageList"][metric] = stats_summary
         
         return result
         

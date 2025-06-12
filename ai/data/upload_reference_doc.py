@@ -1,16 +1,14 @@
 from dotenv import load_dotenv
-from vector_store import vector_store, index
+from vector_store import initialize_vector_store
 from langchain_core.documents import Document
 
 
 load_dotenv(".env")
 
 def parse_and_embed_html():
-    # Fetch and parse HTML
     with open("data/reference_doc.html", "r") as f:
         html = f.read()
     
-    # Split text into chunks with overlap
     words = html.split()
     chunk_size = 500
     overlap = 50
@@ -20,10 +18,6 @@ def parse_and_embed_html():
         chunk = ' '.join(words[i:i + chunk_size])
         chunks.append(chunk)
 
-    # Clear previous data in index
-    # index.delete(delete_all=True)
-    
-    # Prepare documents for storage
     docs = []
     for i, chunk in enumerate(chunks):
         doc = Document(
@@ -33,7 +27,7 @@ def parse_and_embed_html():
         )
         docs.append(doc)
     
-    # Upload to Pinecone vector store
+    vector_store, _ = initialize_vector_store()
     vector_store.add_documents(docs)
 
 

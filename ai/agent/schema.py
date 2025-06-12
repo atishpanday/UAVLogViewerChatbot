@@ -5,7 +5,7 @@ class QueryType(BaseModel):
     query_type: Literal['general', 'flight', 'conversation']
 
 class LogMessageQuery(BaseModel):
-    messageType: str = Field(
+    message_type: str = Field(
         description="The type of log message to be fetched to answer the user's question"
     )
     metrics: list[str] = Field(

@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 import os
 from dotenv import load_dotenv
 
@@ -6,13 +6,13 @@ load_dotenv(".env")
 
 class Model:
     def __init__(self):
-        self.googlegenai = ChatGoogleGenerativeAI(
-            api_key=os.getenv("GOOGLE_API_KEY"), 
-            model=os.getenv("GOOGLE_MODEL"), 
+        self.openai = ChatOpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            model=os.getenv("OPENAI_MODEL"),
             temperature=0.5,
         )
-
-    def get_googlegenai(self):
-        return self.googlegenai
+    
+    def get_llm(self):
+        return self.openai
     
 model = Model()

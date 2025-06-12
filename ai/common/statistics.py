@@ -1,7 +1,26 @@
 import numpy as np
 
 def calculate_statistics(values: list[int | float]):
-    values_array = np.array(values)
+    numeric_values = []
+    for v in values:
+        try:
+            numeric_values.append(float(v))
+        except (ValueError, TypeError):
+            continue
+
+    if not numeric_values:
+        return {
+            "min": None,
+            "max": None,
+            "mean": None,
+            "median": None,
+            "std": None,
+            "variance": None,
+            "percentile_25": None,
+            "percentile_75": None
+        }
+
+    values_array = np.array(numeric_values)
     stats_summary = {
         "min": float(np.min(values_array)),
         "max": float(np.max(values_array)), 
@@ -21,7 +40,7 @@ def detect_abrupt_changes(values: list[float], timestamps: list[float], threshol
     values_array = np.array(values)
     changes = []
     
-    window = 10
+    window = max(10, len(values) // 10)
     rolling_std = np.std(values_array[:window])  # Initial std dev
     
     for i in range(1, len(values)):
