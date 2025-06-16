@@ -19,6 +19,8 @@ export const store = {
     flightModeChanges: [],
     file: null,
     events: [],
+    flightLogs: [],
+    databaseCreated: false,
     cssColors: [],
     colors: [],
     mapAvailable: false,

@@ -227,7 +227,7 @@ export default {
             window.URL.revokeObjectURL(url)
         },
         async postEventsToAI () {
-            const events = this.state.events.map((event) => {
+            const flightLogs = this.state.flightLogs.map((event) => {
                 const messageList = {}
                 for (const [key, value] of Object.entries(event.messageList)) {
                     messageList[key] = Array.from(value)
@@ -238,15 +238,26 @@ export default {
                     dataType: {}
                 }
             })
-            await fetch('http://localhost:8000/uavlogs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    logs: events
+            try {
+                const response = await fetch('http://localhost:8000/uavlogs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        logs: flightLogs
+                    })
                 })
-            })
+                if (response.ok) {
+                    this.state.databaseCreated = true
+                    console.log('Database created')
+                } else {
+                    this.state.databaseCreated = false
+                    console.log('Error creating database')
+                }
+            } catch (error) {
+                console.error('Error posting events to AI:', error)
+            }
         }
     },
     mounted () {
@@ -275,7 +286,7 @@ export default {
                 this.postEventsToAI()
             } else if (event.data.messageType) {
                 this.state.messages[event.data.messageType] = event.data.messageList
-                this.state.events.push(event.data)
+                this.state.flightLogs.push(event.data)
                 this.$eventHub.$emit('messages')
             } else if (event.data.files) {
                 this.state.files = event.data.files

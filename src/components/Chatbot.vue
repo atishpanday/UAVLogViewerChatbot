@@ -9,6 +9,15 @@
                 <h3>AI Assistant</h3>
             </div>
             <div class="chatbot-messages" ref="messageContainer">
+                <div v-if="!state.file" class="database-message">
+                    <p>No flight logs uploaded yet</p>
+                </div>
+                <div v-else-if="state.databaseCreated" class="database-message">
+                    <p>Agent is ready to help you with your flight logs</p>
+                </div>
+                <div v-else class="database-message processing">
+                    <p>Processing your flight logs...</p>
+                </div>
                 <div v-for="(message, index) in messages" :key="index" :class="['message', message.role]">
                     <div v-if="message.role === 'user'">{{ message.content }}</div>
                     <div v-else v-html="renderMarkdown(message.content)"></div>
@@ -29,6 +38,7 @@
 
 <script>
 import { marked } from 'marked'
+import { store } from './Globals'
 
 export default {
     name: 'Chatbot',
@@ -38,7 +48,8 @@ export default {
             newMessage: '',
             isOpen: false,
             loading: false,
-            analyzing: false
+            analyzing: false,
+            state: store
         }
     },
     methods: {
@@ -55,7 +66,7 @@ export default {
                 // Set analyzing to true after 5 seconds
                 setTimeout(() => {
                     this.analyzing = true
-                }, 3000)
+                }, 5000)
 
                 try {
                     const response = await fetch('http://localhost:8000/chatbot', {
@@ -134,6 +145,10 @@ export default {
 </script>
 
 <style scoped>
+p {
+    margin: 0;
+    padding: 0;
+}
 .toggle-button {
     position: fixed;
     bottom: 10px;
@@ -175,6 +190,18 @@ export default {
 .chatbot-header h3 {
     margin: 0;
     font-size: 16px;
+}
+
+.database-message {
+    width: 60%;
+    margin: 2px auto;
+    padding: 10px;
+    background: #4d4d4d;
+    color: white;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    border-radius: 4px;
+    text-align: center;
 }
 
 .chatbot-messages {
