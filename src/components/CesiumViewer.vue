@@ -329,7 +329,7 @@ export default {
                 iconUrl: '/Widgets/Images/ImageryProviders/sentinel-2.png',
                 tooltip: 'Sentinel 2 Imagery',
                 creationFunction: function () {
-                    return ImageryLayer.fromProviderAsync(IonImageryProvider.fromAssetId(3812))
+                    return ImageryLayer.fromProviderAsync(IonImageryProvider.fromAssetId(2275207))
                 }
             })
             imageryProviders.push(this.sentinelProvider)

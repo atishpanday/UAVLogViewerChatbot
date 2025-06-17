@@ -1,5 +1,5 @@
 from .db import get_collection
-from common.statistics import calculate_statistics, detect_abrupt_changes
+from common.downsample_logs import downsample_logs
 
 async def fetch_logs(messageType: str, metrics: list[str]):
     try:
@@ -20,27 +20,24 @@ async def fetch_logs(messageType: str, metrics: list[str]):
         if not result:
             return []
         
-        timestamps = result["messageList"]["time_boot_ms"]
-            
-        # Process metrics with large arrays to get statistical summaries
+        timestamps = result["messageList"].get("time_boot_ms", [])
+
+        if not timestamps:
+            return []
+
+        final_data = {}
+
         for metric in metrics:
-            values = result.get("messageList", {}).get(metric, [])
-            if (
-                isinstance(values, list)
-                and len(values) == len(timestamps) and len(values) > 2
-                and all(isinstance(v, (int, float)) 
-                or (isinstance(v, str) and v.replace('.', '', 1).isdigit()) for v in values)
-            ):
-                stats_summary = calculate_statistics(values)
-                abrupt_changes = detect_abrupt_changes(values, timestamps, 10)
-                stats_summary["abrupt_changes"] = abrupt_changes
-            else:
-                stats_summary = calculate_statistics(values)
-                stats_summary["abrupt_changes"] = []
+            if metric == "time_boot_ms":
+                continue
             
-            result["messageList"][metric] = stats_summary
+            values = result["messageList"][metric]
+            
+            downsampled_data = await downsample_logs(values, timestamps, 100)
+
+            final_data[metric] = downsampled_data
         
-        return result
+        return final_data
         
     except Exception as e:
         print(f"Error fetching data: {str(e)}")
